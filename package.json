@@ -1,0 +1,26 @@
+{
+  "name": "polygon-aggregate",
+  "version": "1.0.0",
+  "description": "Aggregate properties of GeoJSON polygons, grouped by another set of polygons.",
+  "main": "index.js",
+  "scripts": {
+    "test": "tape test/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anandthakker/polygon-aggregate.git"
+  },
+  "keywords": [
+    "geojson",
+    "polygon",
+    "aggregate",
+    "area",
+    "statistics"
+  ],
+  "author": "Anand Thakker",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/anandthakker/polygon-aggregate/issues"
+  },
+  "homepage": "https://github.com/anandthakker/polygon-aggregate#readme"
+}
