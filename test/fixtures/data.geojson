@@ -1,26 +1,11 @@
-# geojson-polygon-aggregate
-
-Aggregate properties of GeoJSON polygons, grouped by another set of polygons
-
-## Install
-
-```
-npm install geojson-polygon-aggregate
-```
-
-
-## Usage
-
-```
-var aggregate = require('geojson-polygon-aggregate')
-var groups = { /* geojson FeatureCollection of polygons */ }
-var data = {
+{
   "type": "FeatureCollection",
   "features": [
     {
       "type": "Feature",
       "properties": {
         "something": 1000,
+        "something-else": 1337
       },
       "geometry": {
         "type": "Polygon",
@@ -145,20 +130,3 @@ var data = {
     }
   ]
 }
-
-var result = aggregate(groups, data, {
-  'something': aggregate.sum('something'),
-  'something-area-weighted': aggregate.sum('something'),
-  'area': aggregate.totalArea(),
-  'count': aggregate.count(),
-  'arbitraryProperty': function (memo, feature) {
-    // the aggregations above are provided for convenience, but you can
-    // do whatever you want here. `memo` is the previous return value
-    // of this function, or groups.properties['arbitraryProperty'] on the
-    // first iteration.
-    return (memo || 1) * feature.properties['something']
-  }
-})
-```
-
-
