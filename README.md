@@ -35,3 +35,13 @@ var result = aggregate(groups, data, {
   }
 })
 ```
+
+
+## Thanks
+
+This module relies *heavily* on the fantastic [Turf.js](https://github.com/turfjs/turf/) project.  If it doesn't do what you need, something over there very likely does!
+
+
+
+
+
