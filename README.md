@@ -11,7 +11,7 @@ npm install geojson-polygon-aggregate
 
 ## Usage
 
-```
+```javascript
 var aggregate = require('geojson-polygon-aggregate')
 var groups = { /* geojson FeatureCollection of polygons */ }
 var data = {
