@@ -19,7 +19,7 @@ var data = { /* geojson FeatureCollection of polygons with some data */ }
 // assumes that the features in data have a numeric property called 'something'
 var result = aggregate(groups, data, {
   'something': aggregate.sum('something'),
-  'something-area-weighted': aggregate.sum('something'),
+  'something-area-weighted': aggregate.areaWeightedSum('something'),
   'area': aggregate.totalArea(),
   'count': aggregate.count(),
   'arbitraryProperty': function (memo, feature) {
