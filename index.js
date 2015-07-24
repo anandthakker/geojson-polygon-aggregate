@@ -26,7 +26,7 @@ module.exports = function (groups, data, aggregations) {
   function aggregate (group) {
     var properties = xtend({}, group.properties)
     data
-    .map(clip.bind(null, group))
+    .map(function (f) { return clip(group, f, { threshold: 0 }) })
     .filter(function (clipped) { return !!clipped })
     .forEach(function (clipped) {
       for (var prop in aggregations) {
