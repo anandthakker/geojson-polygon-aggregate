@@ -25,7 +25,8 @@
   "homepage": "https://github.com/anandthakker/geojson-polygon-aggregate#readme",
   "devDependencies": {
     "standard": "^4.5.4",
-    "tape": "^4.0.1"
+    "tape": "^4.0.1",
+    "turf-envelope": "^1.0.2"
   },
   "dependencies": {
     "geojson-clip-polygon": "^1.0.1",

@@ -82,7 +82,7 @@ module.exports.areaWeightedMean = function (property) {
   }
 
   weightedMean.finish = function (memo, group) {
-    return memo.sum / memo.area
+    return memo ? memo.sum / memo.area : 0
   }
 
   return weightedMean
