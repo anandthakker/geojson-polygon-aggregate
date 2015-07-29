@@ -9,6 +9,7 @@ test('empty', function (t) {
   var result = aggregate(groups, data, {
     'something': aggregate.sum('something'),
     'something-aw': aggregate.areaWeightedSum('something'),
+    'something-mean': aggregate.areaWeightedMean('something'),
     'area': aggregate.totalArea(),
     'count': aggregate.count()
   })
@@ -18,6 +19,7 @@ test('empty', function (t) {
   // check out the area-weighted aggregation
   var actual = {
     'something-aw': 0,
+    'something-mean': 0,
     'area': 0
   }
   result.features.forEach(function (feat) {
@@ -27,6 +29,7 @@ test('empty', function (t) {
   })
   var expected = {
     'something-aw': 544975601.80 * 729 + 1892440077.76 * 1000,
+    'something-mean': 544975601.80 * 729 + 1892440077.76 * 1000 / (544975601.80 + 1892440077.76),
     'area': 544975601.80 + 1892440077.76
   }
 
