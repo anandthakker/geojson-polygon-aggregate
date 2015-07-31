@@ -3,6 +3,14 @@ var clip = require('geojson-clip-polygon')
 var xtend = require('xtend')
 
 /**
+ * Aggregate properties of GeoJSON polygon features.
+ *
+ * @param {FeatureCollection<Polygon>|Array} data - The polygons to aggregate.
+ * @param {Object} aggregations - The aggregations as key-value pairs, where the key is the name of the resulting property, and the value is the aggregation function, with signature (accumulator, clippedFeature, groupingFeature) => accumulator
+ *
+ * @return {Object} A properties object with the aggregated property values
+ */
+/**
  * Aggregate properties of GeoJSON polygon features, grouped by another set of
  * polygons.
  *
@@ -15,6 +23,12 @@ var xtend = require('xtend')
  * copied (shallowly), but aggregation results will override if they have the same name.
  */
 module.exports = function (groups, data, aggregations) {
+  if (!aggregations) {
+    aggregations = data
+    data = groups
+    return aggregateAll(data, aggregations)
+  }
+
   groups = Array.isArray(groups) ? groups : groups.features
   data = Array.isArray(data) ? data : data.features
 
@@ -46,6 +60,21 @@ module.exports = function (groups, data, aggregations) {
       geometry: group.geometry
     }
   }
+}
+
+function aggregateAll (features, aggregations) {
+  if (!Array.isArray(features)) { features = features.features }
+  var properties = {}
+  for (var prop in aggregations) {
+    for (var i = features.length - 1; i >= 0; i--) {
+      properties[prop] = aggregations[prop](properties[prop], features[i])
+    }
+
+    if (typeof aggregations[prop].finish === 'function') {
+      properties[prop] = aggregations[prop].finish(properties[prop])
+    }
+  }
+  return properties
 }
 
 module.exports.count = function () {
@@ -81,7 +110,7 @@ module.exports.areaWeightedMean = function (property) {
     return memo
   }
 
-  weightedMean.finish = function (memo, group) {
+  weightedMean.finish = function (memo) {
     return memo ? memo.sum / memo.area : 0
   }
 
