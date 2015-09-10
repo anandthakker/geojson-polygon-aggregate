@@ -1,6 +1,7 @@
 var area = require('turf-area')
 var clip = require('geojson-clip-polygon')
 var xtend = require('xtend')
+var uniq = require('uniq')
 
 /**
  * Aggregate properties of GeoJSON polygon features.
@@ -79,6 +80,35 @@ function aggregateAll (features, aggregations) {
 
 module.exports.count = function () {
   return function (c) { return (c || 0) + 1 }
+}
+
+/**
+ * Return an aggregation that collects the unique, primitive values of the given
+ * property into a (stringified) array.  If the property value is a stringified
+ * array, it is unpacked--i.e., the array contents are collected rather than the
+ * array itself.
+ */
+module.exports.union = function (property) {
+  function collect (memo, feature) {
+    memo = (memo || [])
+    if (!(property in feature.properties)) { return memo }
+
+    // this is safe bc JSON.parse is a noop if the value is already a primitive
+    var value = JSON.parse(feature.properties[property])
+
+    if (Array.isArray(value)) {
+      memo.push.apply(memo, value)
+    } else {
+      memo.push(value)
+    }
+    return memo
+  }
+
+  collect.finish = function (memo) {
+    return memo ? JSON.stringify(uniq(memo, false, false)) : []
+  }
+
+  return collect
 }
 
 module.exports.totalArea = function () {

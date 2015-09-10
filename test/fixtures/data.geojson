@@ -5,7 +5,9 @@
       "type": "Feature",
       "properties": {
         "something": 1000,
-        "something-else": 1337
+        "something-else": 1337,
+        "arr1": "[1, 2]",
+        "arr2": "[\"hal\", \"dave\"]"
       },
       "geometry": {
         "type": "Polygon",
@@ -74,7 +76,9 @@
     {
       "type": "Feature",
       "properties": {
-        "something": 729
+        "something": 729,
+        "arr1": "[3, 4]",
+        "arr2": 2001
       },
       "geometry": {
         "type": "Polygon",

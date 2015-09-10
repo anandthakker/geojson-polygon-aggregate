@@ -80,3 +80,24 @@ test('aggregate all features', function (t) {
   t.end()
 })
 
+test('union', function (t) {
+  var data = JSON.parse(fs.readFileSync(__dirname + '/fixtures/data.geojson'))
+
+  var result = aggregate(data, {
+    'u1': aggregate.union('something'),
+    'u2': aggregate.union('arr1'),
+    'u3': aggregate.union('arr2')
+  })
+
+  for (var k in result) {
+    result[k] = JSON.parse(result[k])
+  }
+
+  t.deepEqual(result, {
+    'u1': [1000, 729],
+    'u2': [1, 2, 3, 4],
+    'u3': [2001, 'dave', 'hal']
+  })
+  t.end()
+})
+
