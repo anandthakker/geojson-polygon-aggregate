@@ -105,7 +105,7 @@ module.exports.union = function (property) {
   }
 
   collect.finish = function (memo) {
-    return memo ? JSON.stringify(uniq(memo, false, false)) : []
+    return memo ? JSON.stringify(uniq(memo, false, false)) : '[]'
   }
 
   return collect
