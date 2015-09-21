@@ -2,6 +2,7 @@ var area = require('turf-area')
 var clip = require('geojson-clip-polygon')
 var xtend = require('xtend')
 var uniq = require('uniq')
+var through = require('through2')
 
 /**
  * Aggregate properties of GeoJSON polygon features.
@@ -10,6 +11,13 @@ var uniq = require('uniq')
  * @param {Object} aggregations - The aggregations as key-value pairs, where the key is the name of the resulting property, and the value is the aggregation function, with signature (accumulator, clippedFeature, groupingFeature) => accumulator
  *
  * @return {Object} A properties object with the aggregated property values
+ */
+/**
+ * Aggregate properties of streaming GeoJSON polygon features.
+ *
+ * @param {Object} aggregations - The aggregations as key-value pairs, where the key is the name of the resulting property, and the value is the aggregation function, with signature (accumulator, clippedFeature, groupingFeature) => accumulator
+ *
+ * @return {Object} A transform stream reading GeoJSON feature objects and, writing, at the end, a properties object with the aggregated property values
  */
 /**
  * Aggregate properties of GeoJSON polygon features, grouped by another set of
@@ -24,6 +32,11 @@ var uniq = require('uniq')
  * copied (shallowly), but aggregation results will override if they have the same name.
  */
 module.exports = function (groups, data, aggregations) {
+  if (!data) {
+    aggregations = groups
+    return aggregateStream(aggregations)
+  }
+
   if (!aggregations) {
     aggregations = data
     data = groups
@@ -76,6 +89,25 @@ function aggregateAll (features, aggregations) {
     }
   }
   return properties
+}
+
+function aggregateStream (aggregations) {
+  var properties = {}
+  return through.obj(function write (feature, enc, next) {
+    for (var prop in aggregations) {
+      properties[prop] = aggregations[prop](properties[prop], feature)
+    }
+    next()
+  }, function end () {
+    for (var prop in aggregations) {
+      if (typeof aggregations[prop].finish === 'function') {
+        properties[prop] = aggregations[prop].finish(properties[prop])
+      }
+    }
+
+    this.push(properties)
+    this.push(null)
+  })
 }
 
 module.exports.count = function () {

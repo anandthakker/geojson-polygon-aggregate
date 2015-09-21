@@ -101,3 +101,30 @@ test('union', function (t) {
   t.end()
 })
 
+test('streaming', function (t) {
+  var data = JSON.parse(fs.readFileSync(__dirname + '/fixtures/data.geojson')).features
+
+  var stream = aggregate({
+    'something': aggregate.sum('something'),
+    'something-aw': aggregate.areaWeightedSum('something'),
+    'something-mean': aggregate.areaWeightedMean('something'),
+    'area': aggregate.totalArea(),
+    'count': aggregate.count()
+  })
+
+  stream.on('data', function (result) {
+    t.deepEqual(result, {
+      something: 1729,
+      'something-aw': 2289727291472.8496,
+      'something-mean': 939.4077959999869,
+      area: 2437415679.5616817,
+      count: 2
+    })
+    t.end()
+  })
+
+  data.forEach(function (feature) { stream.write(feature) })
+  stream.end()
+
+})
+
