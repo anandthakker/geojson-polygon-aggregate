@@ -86,7 +86,8 @@ test('union', function (t) {
   var result = aggregate(data, {
     'u1': aggregate.union('something'),
     'u2': aggregate.union('arr1'),
-    'u3': aggregate.union('arr2')
+    'u3': aggregate.union('arr2'),
+    'u4': aggregate.union('str')
   })
 
   for (var k in result) {
@@ -96,7 +97,8 @@ test('union', function (t) {
   t.deepEqual(result, {
     'u1': [1000, 729],
     'u2': [1, 2, 3, 4],
-    'u3': [2001, 'dave', 'hal']
+    'u3': [2001, 'dave', 'hal'],
+    'u4': ['Hello', 'world']
   })
   t.end()
 })

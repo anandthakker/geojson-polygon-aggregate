@@ -125,8 +125,12 @@ module.exports.union = function (property) {
     memo = (memo || [])
     if (!(property in feature.properties)) { return memo }
 
-    // this is safe bc JSON.parse is a noop if the value is already a primitive
-    var value = JSON.parse(feature.properties[property])
+    var value
+    try {
+      value = JSON.parse(feature.properties[property])
+    } catch (e) {
+      value = feature.properties[property]
+    }
 
     if (Array.isArray(value)) {
       memo.push.apply(memo, value)

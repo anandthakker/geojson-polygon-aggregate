@@ -7,7 +7,8 @@
         "something": 1000,
         "something-else": 1337,
         "arr1": "[1, 2]",
-        "arr2": "[\"hal\", \"dave\"]"
+        "arr2": "[\"hal\", \"dave\"]",
+        "str": "Hello"
       },
       "geometry": {
         "type": "Polygon",
@@ -78,7 +79,8 @@
       "properties": {
         "something": 729,
         "arr1": "[3, 4]",
-        "arr2": 2001
+        "arr2": 2001,
+        "str": "world"
       },
       "geometry": {
         "type": "Polygon",
