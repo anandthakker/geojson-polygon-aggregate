@@ -1,50 +1,60 @@
-var area = require('turf-area')
 var clip = require('geojson-clip-polygon')
 var xtend = require('xtend')
-var uniq = require('uniq')
 var through = require('through2')
+
+module.exports = all
+module.exports.all = all
+module.exports.groups = groups
+module.exports.stream = stream
+module.exports.reducers = require('./reducers')
 
 /**
  * Aggregate properties of GeoJSON polygon features.
  *
  * @param {FeatureCollection<Polygon>|Array} data - The polygons to aggregate.
- * @param {Object} aggregations - The aggregations as key-value pairs, where the key is the name of the resulting property, and the value is the aggregation function, with signature (accumulator, clippedFeature, groupingFeature) => accumulator
+ * @param {Object} aggregations - The aggregations as key-value pairs, where the key is the name of the resulting property, and the value is the reducer function with signature (accumulator, clippedFeature, groupingFeature, additionalArgs[0], additionalArgs[1], ...) => accumulator
+ * @param {Object} [thisArg] - Optional 'this' context with which to call reducer functions
+ * @param {Array} [additionalArgs] - Optional array of additional args with which to call reducer functions
  *
  * @return {Object} A properties object with the aggregated property values
  */
-/**
- * Aggregate properties of streaming GeoJSON polygon features.
- *
- * @param {Object} aggregations - The aggregations as key-value pairs, where the key is the name of the resulting property, and the value is the aggregation function, with signature (accumulator, clippedFeature, groupingFeature) => accumulator
- *
- * @return {Object} A transform stream reading GeoJSON feature objects and, writing, at the end, a properties object with the aggregated property values
- */
+function all (features, aggregations, thisArg, additionalArgs) {
+  if (!Array.isArray(features)) { features = features.features }
+  var args = [undefined, undefined, undefined].concat(additionalArgs)
+  var memo = {}
+  for (var prop in aggregations) {
+    for (var i = features.length - 1; i >= 0; i--) {
+      args[0] = memo[prop]
+      args[1] = features[i]
+      args[2] = undefined // no grouping feature
+      memo[prop] = aggregations[prop].apply(thisArg, args)
+    }
+
+    if (typeof aggregations[prop].finish === 'function') {
+      memo[prop] = aggregations[prop].finish.apply(thisArg, [memo[prop], undefined].concat(additionalArgs))
+    }
+  }
+  return memo
+}
+
 /**
  * Aggregate properties of GeoJSON polygon features, grouped by another set of
  * polygons.
  *
  * @param {FeatureCollection<Polygon>|Array} groups - The polygons by which to group the aggregations.
  * @param {FeatureCollection<Polygon>|Array} data - The polygons to aggregate.
- * @param {Object} aggregations - The aggregations as key-value pairs, where the key is the name of the resulting property, and the value is the aggregation function, with signature (accumulator, clippedFeature, groupingFeature) => accumulator
+ * @param {Object} aggregations - The aggregations as key-value pairs, where the key is the name of the resulting property, and the value is the reducer function with signature (accumulator, clippedFeature, groupingFeature, additionalArgs[0], additionalArgs[1], ...) => accumulator
+ * @param {Object} [thisArg] - Optional 'this' context with which to call reducer functions
+ * @param {Array} [additionalArgs] - Optional array of additional args with which to call reducer functions
  *
  * @return {FeatureCollection<Polygon>} A set of polygons whose geometries are identical to `groups`, but
  * with properties resulting from the aggregations.  Existing properties on features in `groups` are
  * copied (shallowly), but aggregation results will override if they have the same name.
  */
-module.exports = function (groups, data, aggregations) {
-  if (!data) {
-    aggregations = groups
-    return aggregateStream(aggregations)
-  }
-
-  if (!aggregations) {
-    aggregations = data
-    data = groups
-    return aggregateAll(data, aggregations)
-  }
-
+function groups (groups, data, aggregations, thisArg, additionalArgs) {
   groups = Array.isArray(groups) ? groups : groups.features
   data = Array.isArray(data) ? data : data.features
+  var args = [undefined, undefined, undefined].concat(additionalArgs)
 
   return {
     type: 'FeatureCollection',
@@ -52,133 +62,62 @@ module.exports = function (groups, data, aggregations) {
   }
 
   function aggregate (group) {
-    var properties = xtend({}, group.properties)
+    var memo = xtend({}, group.properties)
     data
     .map(function (f) { return clip(group, f, { threshold: 0 }) })
     .filter(function (clipped) { return !!clipped })
     .forEach(function (clipped) {
       for (var prop in aggregations) {
-        properties[prop] = aggregations[prop](properties[prop], clipped)
+        args[0] = memo[prop]
+        args[1] = clipped
+        args[2] = group
+        memo[prop] = aggregations[prop].apply(thisArg, args)
       }
     })
 
     for (var prop in aggregations) {
       if (typeof aggregations[prop].finish === 'function') {
-        properties[prop] = aggregations[prop].finish(properties[prop], group)
+        memo[prop] = aggregations[prop].finish.apply(thisArg, [memo[prop], group].concat(additionalArgs))
       }
     }
 
     return {
       type: group.type,
-      properties: properties,
+      properties: memo,
       geometry: group.geometry
     }
   }
 }
 
-function aggregateAll (features, aggregations) {
-  if (!Array.isArray(features)) { features = features.features }
-  var properties = {}
-  for (var prop in aggregations) {
-    for (var i = features.length - 1; i >= 0; i--) {
-      properties[prop] = aggregations[prop](properties[prop], features[i])
-    }
-
-    if (typeof aggregations[prop].finish === 'function') {
-      properties[prop] = aggregations[prop].finish(properties[prop])
-    }
-  }
-  return properties
-}
-
-function aggregateStream (aggregations) {
-  var properties = {}
+/**
+ * Aggregate properties of streaming GeoJSON polygon features.
+ *
+ * @param {Object} aggregations - The aggregations as key-value pairs, where the key is the name of the resulting property, and the value is the reducer function with signature (accumulator, clippedFeature, groupingFeature, additionalArgs[0], additionalArgs[1], ...) => accumulator
+ * @param {Object} [thisArg] - Optional 'this' context with which to call reducer functions
+ * @param {Array} [additionalArgs] - Optional array of additional args with which to call reducer functions
+ *
+ * @return {Object} A transform stream reading GeoJSON feature objects and, writing, at the end, a properties object with the aggregated property values
+ */
+function stream (aggregations, thisArg, additionalArgs) {
+  var memo = {}
+  var args = [undefined, undefined, undefined].concat(additionalArgs)
   return through.obj(function write (feature, enc, next) {
     for (var prop in aggregations) {
-      properties[prop] = aggregations[prop](properties[prop], feature)
+      args[0] = memo[prop]
+      args[1] = feature
+      args[2] = undefined // no grouping feature
+      memo[prop] = aggregations[prop].apply(thisArg, args)
     }
     next()
   }, function end () {
     for (var prop in aggregations) {
       if (typeof aggregations[prop].finish === 'function') {
-        properties[prop] = aggregations[prop].finish(properties[prop])
+        memo[prop] = aggregations[prop].finish.apply(thisArg, [memo[prop], undefined].concat(additionalArgs))
       }
     }
 
-    this.push(properties)
+    this.push(memo)
     this.push(null)
   })
 }
 
-module.exports.count = function () {
-  return function (c) { return (c || 0) + 1 }
-}
-
-/**
- * Return an aggregation that collects the unique, primitive values of the given
- * property into a (stringified) array.  If the property value is a stringified
- * array, it is unpacked--i.e., the array contents are collected rather than the
- * array itself.
- */
-module.exports.union = function (property) {
-  function collect (memo, feature) {
-    memo = (memo || [])
-    if (!(property in feature.properties)) { return memo }
-
-    var value
-    try {
-      value = JSON.parse(feature.properties[property])
-    } catch (e) {
-      value = feature.properties[property]
-    }
-
-    if (Array.isArray(value)) {
-      memo.push.apply(memo, value)
-    } else {
-      memo.push(value)
-    }
-    return memo
-  }
-
-  collect.finish = function (memo) {
-    return memo ? JSON.stringify(uniq(memo, false, false)) : '[]'
-  }
-
-  return collect
-}
-
-module.exports.totalArea = function () {
-  return function (a, feature) {
-    return (a || 0) + area(feature)
-  }
-}
-
-module.exports.sum = function (property) {
-  return function (s, feature) {
-    return (s || 0) + (feature.properties[property] || 0)
-  }
-}
-
-module.exports.areaWeightedSum = function (property) {
-  return function (s, feature) {
-    return (s || 0) + area(feature) * (feature.properties[property] || 0)
-  }
-}
-
-module.exports.areaWeightedMean = function (property) {
-  var ws = module.exports.areaWeightedSum(property)
-  var ta = module.exports.totalArea()
-
-  function weightedMean (memo, feature) {
-    memo = memo || {}
-    memo.sum = ws(memo.sum, feature)
-    memo.area = ta(memo.area, feature)
-    return memo
-  }
-
-  weightedMean.finish = function (memo) {
-    return memo ? memo.sum / memo.area : 0
-  }
-
-  return weightedMean
-}
