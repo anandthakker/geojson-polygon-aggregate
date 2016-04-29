@@ -42,9 +42,8 @@ test('basic', function (t) {
     'area': 544975601.80 + 1892440077.76
   }
 
-  for (var k in actual) {
-    t.ok(Math.abs(actual[k] - expected[k]) / expected[k] < 0.01, k + ' ' + actual[k] + ' vs ' + expected[k])
-  }
+  t.deepEqual(round(actual['something-aw'], 1e9), round(expected['something-aw'], 1e9))
+  t.deepEqual(round(actual['area'], 1e9), round(expected['area'], 1e9))
 
   t.end()
 })
@@ -65,7 +64,7 @@ test('easy area weighted mean', function (t) {
   var props = result.features[0].properties
   var actual = props['something-mean']
   var expected = props['something-aw'] / props.area
-  t.ok(Math.abs(actual - expected) / expected < 0.01)
+  t.equal(round(actual), round(expected))
   t.end()
 })
 
@@ -92,14 +91,14 @@ test('aggregate all features', function (t) {
   }, thisArg, [extraArg])
 
   t.ok(thisArg.called)
-  t.deepEqual(result, {
+  t.deepEqual(round(result), round({
     something: 1729,
     'something-aw': 2289727291472.8496,
     'something-mean': 939.4077959999869,
     area: 2437415679.5616817,
     count: 2,
     extra: 'some-value'
-  })
+  }))
   t.end()
 })
 
@@ -150,14 +149,14 @@ test('streaming', function (t) {
 
   stream.on('data', function (result) {
     t.ok(thisArg.called)
-    t.deepEqual(result, {
+    t.deepEqual(round(result), round({
       something: 1729,
       'something-aw': 2289727291472.8496,
       'something-mean': 939.4077959999869,
       area: 2437415679.5616817,
       count: 2,
       extra: 'some-value'
-    })
+    }))
     t.end()
   })
 
@@ -165,3 +164,15 @@ test('streaming', function (t) {
   stream.end()
 })
 
+function round (x, place) {
+  if (typeof x === 'number') {
+    place = place || 1
+    return Math.round(x / place) * place
+  } else if (typeof x === 'object') {
+    var rounded = {}
+    for (var k in x) { rounded[k] = round(x[k], place) }
+    return rounded
+  } else {
+    return x
+  }
+}
