@@ -39,8 +39,10 @@
   },
   "dependencies": {
     "geojson-clip-polygon": "^1.0.1",
+    "rbush": "^2.0.1",
     "through2": "^2.0.0",
     "turf-area": "^1.1.1",
+    "turf-bbox": "^3.0.12",
     "uniq": "^1.0.1",
     "xtend": "^4.0.0"
   }

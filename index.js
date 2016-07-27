@@ -1,6 +1,8 @@
 var clip = require('geojson-clip-polygon')
 var xtend = require('xtend')
 var through = require('through2')
+var rbush = require('rbush')
+var bbox = require('turf-bbox')
 
 module.exports = all
 module.exports.all = all
@@ -56,6 +58,18 @@ function groups (groups, data, aggregations, thisArg, additionalArgs) {
   data = Array.isArray(data) ? data : data.features
   var args = [undefined, undefined, undefined].concat(additionalArgs)
 
+  var tree = rbush(data.length)
+  tree.load(data.map(function (d) {
+    var dataBbox = bbox(d)
+    return {
+      minX: dataBbox[0],
+      minY: dataBbox[1],
+      maxX: dataBbox[2],
+      maxY: dataBbox[3],
+      feature: d
+    }
+  }))
+
   return {
     type: 'FeatureCollection',
     features: groups.map(aggregate)
@@ -63,7 +77,15 @@ function groups (groups, data, aggregations, thisArg, additionalArgs) {
 
   function aggregate (group) {
     var memo = xtend({}, group.properties)
-    data
+
+    var groupBbox = bbox(group)
+    tree.search({
+      minX: groupBbox[0],
+      minY: groupBbox[1],
+      maxX: groupBbox[2],
+      maxY: groupBbox[3]
+    })
+    .map(function (f) { return f.feature })
     .map(function (f) { return clip(group, f, { threshold: 0 }) })
     .filter(function (clipped) { return !!clipped })
     .forEach(function (clipped) {
@@ -120,4 +142,3 @@ function stream (aggregations, thisArg, additionalArgs) {
     this.push(null)
   })
 }
-
