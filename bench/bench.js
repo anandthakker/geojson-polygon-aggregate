@@ -1,10 +1,11 @@
 var fs = require('fs')
 var path = require('path')
-var aggregate = require('./index')
-var reducers = require('./reducers')
+var prettyMs = require('pretty-ms')
+var aggregate = require('../')
+var reducers = require('../reducers')
 
-var groups = JSON.parse(fs.readFileSync(path.join(__dirname, 'test/fixtures/groups.geojson')))
-var data = JSON.parse(fs.readFileSync(path.join(__dirname, 'test/fixtures/data.geojson')))
+var groups = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/groups.geojson')))
+var data = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/data.geojson')))
 
 var extraArg = 1337
 var thisArg = { called: 0 }
@@ -20,4 +21,4 @@ aggregate.groups(groups, data, {
 }, thisArg, [extraArg])
 
 var after = Date.now()
-console.log(after - before)
+console.log(prettyMs(after - before))
