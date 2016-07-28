@@ -58,7 +58,7 @@ function groups (groups, data, aggregations, thisArg, additionalArgs) {
   data = Array.isArray(data) ? data : data.features
   var args = [undefined, undefined, undefined].concat(additionalArgs)
 
-  var tree = rbush(data.length)
+  var tree = rbush()
   tree.load(data.map(function (d) {
     var dataBbox = bbox(d)
     return {
